@@ -1,7 +1,7 @@
 <mat-table [dataSource]="dataSource" class="mat-elevation-z8" cdkDropListGroup>
   <ng-container *ngFor="let column of columns; let i = index" [matColumnDef]="column.field">
     <mat-header-cell *matHeaderCellDef
-      (mousedown)="onResizeColumn($event, column)">
+      (mousedown)="onResizeColumn($event, column, i)">
       {{ column.field }}
     </mat-header-cell>
     <mat-cell *matCellDef="let row" > {{ row[column.field] }}  </mat-cell>

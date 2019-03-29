@@ -90,19 +90,18 @@ export class AppComponent implements OnInit, AfterViewInit {
     });
   }
 
-  onResizeColumn(event: any, column) {
+  onResizeColumn(event: any, column, index: number) {
     this.pressed = true;
     this.startX = event.pageX;
     this.startWidth = event.target.clientWidth;
-    this.mouseMove(column);
+    this.mouseMove(column, index);
   }
 
-  mouseMove(column: any) {
+  mouseMove(column: any, index) {
     this.resizableMousemove = this.renderer.listen('document', 'mousemove', (event) => {
       if (this.pressed) {
         const width = this.startWidth + (event.pageX - this.startX);
-        column.width = width;
-        this.setColumnWidth(column, width);
+        this.setColumnWidthChanges(column, index, width);
       }
     });
     this.resizableMouseup = this.renderer.listen('document', 'mouseup', (event) => {
@@ -112,6 +111,22 @@ export class AppComponent implements OnInit, AfterViewInit {
         this.resizableMouseup();
       }
     });
+  }
+  setColumnWidthChanges(column, index, width) {
+    const orgWidth = column.width;
+    const dx = width - orgWidth;
+    if ( dx !== 0 ) {
+      let j = -1;
+      if ( index === this.columns.length - 1 ) {
+        j = index - 1;
+      } else {
+        j = index + 1;
+      }
+      this.columns[index].width = width;
+      this.setColumnWidth(column, width);
+      this.columns[j].width -= dx;
+      this.setColumnWidth(this.columns[j], this.columns[j].width);
+    }
   }
 
   setColumnWidth(column, width: number) {
