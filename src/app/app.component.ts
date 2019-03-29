@@ -52,6 +52,7 @@ export class AppComponent implements OnInit, AfterViewInit {
   dataSource = ELEMENT_DATA;
 
   pressed = false;
+  currentResizeIndex: number;
   startX: number;
   startWidth: number;
   resizableMousemove: () => void;
@@ -91,17 +92,22 @@ export class AppComponent implements OnInit, AfterViewInit {
   }
 
   onResizeColumn(event: any, column, index: number) {
-    this.pressed = true;
-    this.startX = event.pageX;
-    this.startWidth = event.target.clientWidth;
-    this.mouseMove(column, index);
+    if ( index < this.columns.length - 1 ) { // last column is not allow to resize, but can be resized by previous column
+      this.currentResizeIndex = index;
+      this.pressed = true;
+      this.startX = event.pageX;
+      this.startWidth = event.target.clientWidth;
+      this.mouseMove(column, index);
+    }
   }
 
   mouseMove(column: any, index) {
     this.resizableMousemove = this.renderer.listen('document', 'mousemove', (event) => {
       if (this.pressed) {
         const width = this.startWidth + (event.pageX - this.startX);
-        this.setColumnWidthChanges(column, index, width);
+        if ( this.currentResizeIndex === index && width > 50 ) { // TODO need define min Width for each column???
+          this.setColumnWidthChanges(column, index, width);
+        }
       }
     });
     this.resizableMouseup = this.renderer.listen('document', 'mouseup', (event) => {
@@ -116,16 +122,14 @@ export class AppComponent implements OnInit, AfterViewInit {
     const orgWidth = column.width;
     const dx = width - orgWidth;
     if ( dx !== 0 ) {
-      let j = -1;
-      if ( index === this.columns.length - 1 ) {
-        j = index - 1;
-      } else {
-        j = index + 1;
+      const j = index + 1;
+      const newWidth = this.columns[j].width - dx;
+      if ( newWidth > 50 ) { // TODO need define min Width for each column???
+        this.columns[index].width = width;
+        this.setColumnWidth(column, width);
+        this.columns[j].width = newWidth;
+        this.setColumnWidth(this.columns[j], newWidth);
       }
-      this.columns[index].width = width;
-      this.setColumnWidth(column, width);
-      this.columns[j].width -= dx;
-      this.setColumnWidth(this.columns[j], this.columns[j].width);
     }
   }
 
