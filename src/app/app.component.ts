@@ -1,16 +1,5 @@
 import { AfterViewInit, Component, ElementRef, HostListener, OnInit, Renderer2, ViewChild } from '@angular/core';
-
-import {
-  MatTable,
-  MatTableDataSource,
-  MatSort,
-  MatPaginator,
-  MatDialog,
-  MatColumnDef,
-  MatCellDef,
-  MatDialogConfig
-} from '@angular/material';
-
+import { MatTable } from '@angular/material';
 
 export interface PeriodicElement {
   name: string;
@@ -59,7 +48,6 @@ export class AppComponent implements OnInit, AfterViewInit {
   resizableMouseup: () => void;
 
   constructor(
-    private el: ElementRef,
     private renderer: Renderer2
   ) { }
 
@@ -71,16 +59,15 @@ export class AppComponent implements OnInit, AfterViewInit {
     this.setTableResize(this.matTableRef.nativeElement.clientWidth);
   }
 
-  setTableResize(tableWidth) {
+  setTableResize(tableWidth: number) {
     let totWidth = 0;
     this.columns.forEach(( column) => {
       totWidth += column.width;
-      this.setColumnWidth(column, column.width);
     });
     const scale = (tableWidth - 5) / totWidth;
     this.columns.forEach(( column) => {
       column.width *= scale;
-      this.setColumnWidth(column, column.width);
+      this.setColumnWidth(column);
     });
   }
 
@@ -91,22 +78,22 @@ export class AppComponent implements OnInit, AfterViewInit {
     });
   }
 
-  onResizeColumn(event: any, column, index: number) {
+  onResizeColumn(event: any, index: number) {
     if ( index < this.columns.length - 1 ) { // last column is not allow to resize, but can be resized by previous column
       this.currentResizeIndex = index;
       this.pressed = true;
       this.startX = event.pageX;
       this.startWidth = event.target.clientWidth;
-      this.mouseMove(column, index);
+      this.mouseMove(index);
     }
   }
 
-  mouseMove(column: any, index) {
+  mouseMove(index: number) {
     this.resizableMousemove = this.renderer.listen('document', 'mousemove', (event) => {
       if (this.pressed) {
         const width = this.startWidth + (event.pageX - this.startX);
         if ( this.currentResizeIndex === index && width > 50 ) { // TODO need define min Width for each column???
-          this.setColumnWidthChanges(column, index, width);
+          this.setColumnWidthChanges(index, width);
         }
       }
     });
@@ -118,23 +105,24 @@ export class AppComponent implements OnInit, AfterViewInit {
       }
     });
   }
-  setColumnWidthChanges(column, index, width) {
-    const orgWidth = column.width;
+
+  setColumnWidthChanges(index: number, width: number) {
+    const orgWidth = this.columns[index].width;
     const dx = width - orgWidth;
     if ( dx !== 0 ) {
       const j = index + 1;
       const newWidth = this.columns[j].width - dx;
       if ( newWidth > 50 ) { // TODO need define min Width for each column???
         this.columns[index].width = width;
-        this.setColumnWidth(column, width);
+        this.setColumnWidth(this.columns[index]);
         this.columns[j].width = newWidth;
-        this.setColumnWidth(this.columns[j], newWidth);
+        this.setColumnWidth(this.columns[j]);
       }
     }
   }
 
-  setColumnWidth(column, width: number) {
-    const widthpx = width + 'px';
+  setColumnWidth(column: any) {
+    const widthpx = column.width + 'px';
     const columnEls = document.getElementsByClassName('mat-column-' + column.field);
     // tslint:disable-next-line: prefer-for-of
     for (let i = 0; i < columnEls.length; i++) {
