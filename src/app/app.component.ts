@@ -1,4 +1,4 @@
-import { Component, OnInit, Renderer2 } from '@angular/core';
+import { AfterViewInit, Component, HostListener, OnInit, Renderer2 } from '@angular/core';
 
 export interface PeriodicElement {
   name: string;
@@ -25,7 +25,7 @@ const ELEMENT_DATA: PeriodicElement[] = [
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss']
 })
-export class AppComponent implements OnInit {
+export class AppComponent implements OnInit, AfterViewInit {
   title = 'Material Table column Resize';
 
   columns: any[] = [
@@ -49,6 +49,12 @@ export class AppComponent implements OnInit {
 
   ngOnInit() {
     this.setDisplayedColumns();
+  }
+
+  ngAfterViewInit() {
+    this.columns.forEach(( column, index) => {
+      this.setColumnWidth(column, column.width);
+    });
   }
 
   setDisplayedColumns() {
@@ -90,5 +96,9 @@ export class AppComponent implements OnInit {
       const el = columnEls[i] as HTMLDivElement;
       el.style.width = widthpx;
     }
+  }
+
+  @HostListener('window:resize', ['$event'])
+  onResize(event) {
   }
 }
