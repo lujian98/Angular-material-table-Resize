@@ -1,4 +1,16 @@
-import { AfterViewInit, Component, HostListener, OnInit, Renderer2 } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, HostListener, OnInit, Renderer2, ViewChild } from '@angular/core';
+
+import {
+  MatTable,
+  MatTableDataSource,
+  MatSort,
+  MatPaginator,
+  MatDialog,
+  MatColumnDef,
+  MatCellDef,
+  MatDialogConfig
+} from '@angular/material';
+
 
 export interface PeriodicElement {
   name: string;
@@ -28,6 +40,8 @@ const ELEMENT_DATA: PeriodicElement[] = [
 export class AppComponent implements OnInit, AfterViewInit {
   title = 'Material Table column Resize';
 
+  @ViewChild(MatTable, {read: ElementRef} ) private matTableRef: ElementRef;
+
   columns: any[] = [
     { field: 'position', width: 100,  },
     { field: 'name', width: 350, },
@@ -44,6 +58,7 @@ export class AppComponent implements OnInit, AfterViewInit {
   resizableMouseup: () => void;
 
   constructor(
+    private el: ElementRef,
     private renderer: Renderer2
   ) { }
 
@@ -52,7 +67,18 @@ export class AppComponent implements OnInit, AfterViewInit {
   }
 
   ngAfterViewInit() {
-    this.columns.forEach(( column, index) => {
+    this.setTableResize(this.matTableRef.nativeElement.clientWidth);
+  }
+
+  setTableResize(tableWidth) {
+    let totWidth = 0;
+    this.columns.forEach(( column) => {
+      totWidth += column.width;
+      this.setColumnWidth(column, column.width);
+    });
+    const scale = (tableWidth - 5) / totWidth;
+    this.columns.forEach(( column) => {
+      column.width *= scale;
       this.setColumnWidth(column, column.width);
     });
   }
@@ -100,5 +126,6 @@ export class AppComponent implements OnInit, AfterViewInit {
 
   @HostListener('window:resize', ['$event'])
   onResize(event) {
+    this.setTableResize(this.matTableRef.nativeElement.clientWidth);
   }
 }
