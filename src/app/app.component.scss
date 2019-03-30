@@ -8,6 +8,7 @@ mat-footer-cell,
 mat-header-cell {
   width: 200px;
   flex: none;
+  justify-content: center;
 }
 
 .mat-table mat-cell:first-child {
