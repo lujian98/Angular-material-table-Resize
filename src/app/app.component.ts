@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, ElementRef, HostListener, OnInit, Renderer2, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, HostListener, OnInit, Renderer2, ViewChild, EventEmitter } from '@angular/core';
 import { MatTable } from '@angular/material';
 
 export interface PeriodicElement {
@@ -84,6 +84,7 @@ export class AppComponent implements OnInit, AfterViewInit {
     this.pressed = true;
     this.startX = event.pageX;
     this.startWidth = event.target.clientWidth;
+    event.preventDefault();
     this.mouseMove(index);
   }
 
@@ -104,7 +105,7 @@ export class AppComponent implements OnInit, AfterViewInit {
 
   mouseMove(index: number) {
     this.resizableMousemove = this.renderer.listen('document', 'mousemove', (event) => {
-      if (this.pressed) {
+      if (this.pressed && event.buttons ) {
         const dx = (this.isResizingRight) ? (event.pageX - this.startX) : (-event.pageX + this.startX);
         const width = this.startWidth + dx;
         if ( this.currentResizeIndex === index && width > 50 ) {
@@ -115,6 +116,7 @@ export class AppComponent implements OnInit, AfterViewInit {
     this.resizableMouseup = this.renderer.listen('document', 'mouseup', (event) => {
       if (this.pressed) {
         this.pressed = false;
+        this.currentResizeIndex = -1;
         this.resizableMousemove();
         this.resizableMouseup();
       }
