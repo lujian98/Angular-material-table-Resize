@@ -28,7 +28,6 @@ const ELEMENT_DATA: PeriodicElement[] = [
 })
 export class AppComponent implements OnInit, AfterViewInit {
   title = 'Material Table column Resize';
-
   @ViewChild(MatTable, {read: ElementRef} ) private matTableRef: ElementRef;
 
   columns: any[] = [
@@ -44,6 +43,7 @@ export class AppComponent implements OnInit, AfterViewInit {
   currentResizeIndex: number;
   startX: number;
   startWidth: number;
+  isResizingRight: boolean;
   resizableMousemove: () => void;
   resizableMouseup: () => void;
 
@@ -79,20 +79,35 @@ export class AppComponent implements OnInit, AfterViewInit {
   }
 
   onResizeColumn(event: any, index: number) {
-    if ( index < this.columns.length - 1 ) { // last column is not allow to resize, but can be resized by previous column
-      this.currentResizeIndex = index;
-      this.pressed = true;
-      this.startX = event.pageX;
-      this.startWidth = event.target.clientWidth;
-      this.mouseMove(index);
+    this.checkResizing(event, index);
+    this.currentResizeIndex = index;
+    this.pressed = true;
+    this.startX = event.pageX;
+    this.startWidth = event.target.clientWidth;
+    this.mouseMove(index);
+  }
+
+  private checkResizing(event, index) {
+    const cellData = this.getCellData(index);
+    if ( Math.abs(event.pageX - cellData.right) < cellData.width / 2 ) {
+      this.isResizingRight = true;
+    } else {
+      this.isResizingRight = false;
     }
+  }
+
+  private getCellData(index: number) {
+    const headerRow = this.matTableRef.nativeElement.children[0];
+    const cell = headerRow.children[index];
+    return cell.getBoundingClientRect();
   }
 
   mouseMove(index: number) {
     this.resizableMousemove = this.renderer.listen('document', 'mousemove', (event) => {
       if (this.pressed) {
-        const width = this.startWidth + (event.pageX - this.startX);
-        if ( this.currentResizeIndex === index && width > 50 ) { // TODO need define min Width for each column???
+        const dx = (this.isResizingRight) ? (event.pageX - this.startX) : (-event.pageX + this.startX);
+        const width = this.startWidth + dx;
+        if ( this.currentResizeIndex === index && width > 50 ) {
           this.setColumnWidthChanges(index, width);
         }
       }
@@ -110,25 +125,24 @@ export class AppComponent implements OnInit, AfterViewInit {
     const orgWidth = this.columns[index].width;
     const dx = width - orgWidth;
     if ( dx !== 0 ) {
-      const j = index + 1;
-      const newWidth = this.columns[j].width - dx;
-      if ( newWidth > 50 ) { // TODO need define min Width for each column???
-        this.columns[index].width = width;
-        this.setColumnWidth(this.columns[index]);
-        this.columns[j].width = newWidth;
-        this.setColumnWidth(this.columns[j]);
+      const j = ( this.isResizingRight ) ? index + 1 : index - 1;
+      if ( j !== this.columns.length && j >= 0 ) {
+        const newWidth = this.columns[j].width - dx;
+        if ( newWidth > 50 ) {
+          this.columns[index].width = width;
+          this.setColumnWidth(this.columns[index]);
+          this.columns[j].width = newWidth;
+          this.setColumnWidth(this.columns[j]);
+        }
       }
     }
   }
 
   setColumnWidth(column: any) {
-    const widthpx = column.width + 'px';
-    const columnEls = document.getElementsByClassName('mat-column-' + column.field);
-    // tslint:disable-next-line: prefer-for-of
-    for (let i = 0; i < columnEls.length; i++) {
-      const el = columnEls[i] as HTMLDivElement;
-      el.style.width = widthpx;
-    }
+    const columnEls = Array.from( document.getElementsByClassName('mat-column-' + column.field) );
+    columnEls.forEach(( el: HTMLDivElement ) => {
+      el.style.width = column.width + 'px';
+    });
   }
 
   @HostListener('window:resize', ['$event'])
