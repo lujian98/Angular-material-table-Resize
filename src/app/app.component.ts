@@ -90,7 +90,7 @@ export class AppComponent implements OnInit, AfterViewInit {
 
   private checkResizing(event, index) {
     const cellData = this.getCellData(index);
-    if ( Math.abs(event.pageX - cellData.right) < cellData.width / 2 ) {
+    if ( ( index === 0 ) || ( Math.abs(event.pageX - cellData.right) < cellData.width / 2 &&  index !== this.columns.length - 1 ) ) {
       this.isResizingRight = true;
     } else {
       this.isResizingRight = false;
@@ -128,15 +128,13 @@ export class AppComponent implements OnInit, AfterViewInit {
     const dx = width - orgWidth;
     if ( dx !== 0 ) {
       const j = ( this.isResizingRight ) ? index + 1 : index - 1;
-      if ( j !== this.columns.length && j >= 0 ) {
-        const newWidth = this.columns[j].width - dx;
-        if ( newWidth > 50 ) {
+      const newWidth = this.columns[j].width - dx;
+      if ( newWidth > 50 ) {
           this.columns[index].width = width;
           this.setColumnWidth(this.columns[index]);
           this.columns[j].width = newWidth;
           this.setColumnWidth(this.columns[j]);
         }
-      }
     }
   }
 
