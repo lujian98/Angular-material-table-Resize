@@ -66,14 +66,12 @@ export class AppComponent implements OnInit, AfterViewInit {
 
   onColumnSelect() {
     this.setDisplayedColumns();
-    console.info('tableWidth', this.matTableRef.nativeElement.clientWidth);
+    // console.info('tableWidth', this.matTableRef.nativeElement.clientWidth);
     setTimeout( _ => {
       const tableWidth = this.matTableRef.nativeElement.clientWidth;
-      console.info('tableWidth', tableWidth);
+      // console.info('tableWidth', tableWidth);
         this.setTableResize(tableWidth);
-    }, 10);
-    // this.setTableResize(tableWidth);
-    // console.info('tableWidth', this.matTableRef.nativeElement.clientWidth);
+    }, 1);
   }
 
   previousIndex: number;
@@ -91,8 +89,6 @@ export class AppComponent implements OnInit, AfterViewInit {
         , this.displayColumns.indexOf(nextField));
 
       this.onColumnSelect();
-      // this.setTableResize(this.matTableRef.nativeElement.clientWidth);
-      // this.mouseMove(index);
     }
   }
 
@@ -113,9 +109,9 @@ export class AppComponent implements OnInit, AfterViewInit {
   }
 
   onResizeColumn(event: any, indexA: number) {
-    console.info('indexA', indexA);
+    // console.info('indexA', indexA);
     const index = this.displayColumns.indexOf(this.availableColumns[indexA]);
-    console.info('index', index);
+    // console.info('index', index);
     this.checkResizing(event, index);
     this.currentResizeIndex = index;
     this.pressed = true;
@@ -127,8 +123,8 @@ export class AppComponent implements OnInit, AfterViewInit {
 
   private checkResizing(event, index) {
     const cellData = this.getCellData(index);
-    console.info('checkResizing:', cellData);
-    console.info('index:', index, 'this.availableColumns.length:', this.displayColumns.length);
+    // console.info('checkResizing:', cellData);
+    // console.info('index:', index, 'this.availableColumns.length:', this.displayColumns.length);
     if ( ( index === 0 ) || ( Math.abs(event.pageX - cellData.right) < cellData.width / 2 &&  index !== this.displayColumns.length - 1 ) ) {
       this.isResizingRight = true;
     } else {
@@ -138,7 +134,7 @@ export class AppComponent implements OnInit, AfterViewInit {
 
   private getCellData(index: number) {
     const headerRow = this.matTableRef.nativeElement.children[0];
-    console.info('getCellData', headerRow);
+    // console.info('getCellData', headerRow);
     const cell = headerRow.children[index];
     return cell.getBoundingClientRect();
   }
@@ -159,8 +155,8 @@ export class AppComponent implements OnInit, AfterViewInit {
         this.currentResizeIndex = -1;
         this.resizableMousemove();
         this.resizableMouseup();
-        console.info('avail:', this.availableColumns);
-        console.info('disp:', this.displayColumns);
+        // console.info('avail:', this.availableColumns);
+        // console.info('disp:', this.displayColumns);
       }
     });
   }
@@ -183,6 +179,7 @@ export class AppComponent implements OnInit, AfterViewInit {
   setColumnWidth(column: any) {
     const columnEls = Array.from( document.getElementsByClassName(`mat-column-${column.field}`) );
     columnEls.forEach(( el: HTMLDivElement ) => {
+      // use Rederer2 object to manipulate DOM
       this.renderer.setStyle(el, 'width', `${column.width}px`);
       //el.style.width = column.width + 'px';
     });
@@ -190,6 +187,9 @@ export class AppComponent implements OnInit, AfterViewInit {
 
   @HostListener('window:resize', ['$event'])
   onResize(event) {
-    this.setTableResize(this.matTableRef.nativeElement.clientWidth);
+    this.onColumnSelect();
+    // setTimeout( _ => {
+    //   this.setTableResize(this.matTableRef.nativeElement.clientWidth);
+    // }, 10);
   }
 }
