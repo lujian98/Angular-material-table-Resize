@@ -65,8 +65,15 @@ export class AppComponent implements OnInit, AfterViewInit {
   }
 
   onColumnSelect() {
-    this.setTableResize(this.matTableRef.nativeElement.clientWidth);
     this.setDisplayedColumns();
+    console.info('tableWidth', this.matTableRef.nativeElement.clientWidth);
+    setTimeout( _ => {
+      const tableWidth = this.matTableRef.nativeElement.clientWidth;
+      console.info('tableWidth', tableWidth);
+        this.setTableResize(tableWidth);
+    }, 10);
+    // this.setTableResize(tableWidth);
+    // console.info('tableWidth', this.matTableRef.nativeElement.clientWidth);
   }
 
   previousIndex: number;
@@ -83,7 +90,7 @@ export class AppComponent implements OnInit, AfterViewInit {
         , this.displayColumns.indexOf(prevField)
         , this.displayColumns.indexOf(nextField));
 
-      this.setDisplayedColumns();
+      this.onColumnSelect();
       // this.setTableResize(this.matTableRef.nativeElement.clientWidth);
       // this.mouseMove(index);
     }
@@ -152,6 +159,8 @@ export class AppComponent implements OnInit, AfterViewInit {
         this.currentResizeIndex = -1;
         this.resizableMousemove();
         this.resizableMouseup();
+        console.info('avail:', this.availableColumns);
+        console.info('disp:', this.displayColumns);
       }
     });
   }
