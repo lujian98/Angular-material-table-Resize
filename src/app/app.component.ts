@@ -177,7 +177,9 @@ export class AppComponent implements OnInit, AfterViewInit {
   }
 
   setColumnWidth(column: any) {
-    const columnEls = Array.from( document.getElementsByClassName(`mat-column-${column.field}`) );
+    const matColDef = column.field.replace(/\W/g, '-'); // allow for spaces, special chars in matColumnDef
+    // console.info('matColDef:', matColDef);
+    const columnEls = Array.from(document.getElementsByClassName(`mat-column-${column.field}`));
     columnEls.forEach(( el: HTMLDivElement ) => {
       // use Rederer2 object to manipulate DOM
       this.renderer.setStyle(el, 'width', `${column.width}px`);
