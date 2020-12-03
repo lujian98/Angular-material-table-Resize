@@ -1,5 +1,6 @@
 import { AfterViewInit, Component, ElementRef, HostListener, OnInit, Renderer2, ViewChild } from '@angular/core';
-import { MatTable } from '@angular/material';
+import { MatTable, MatTableDataSource, MatSort } from '@angular/material';
+import { CdkDragStart, CdkDropList, moveItemInArray } from '@angular/cdk/drag-drop';
 
 export interface PeriodicElement {
   name: string;
@@ -29,15 +30,17 @@ const ELEMENT_DATA: PeriodicElement[] = [
 export class AppComponent implements OnInit, AfterViewInit {
   title = 'Material Table column Resize';
   @ViewChild(MatTable, {read: ElementRef} ) private matTableRef: ElementRef;
+  @ViewChild(MatSort) sort: MatSort;
 
-  columns: any[] = [
-    { field: 'position', width: 100,  },
-    { field: 'name', width: 350, },
-    { field: 'weight', width: 250, },
-    { field: 'symbol', width: 100, }
+  availableColumns: any[] = [
+    { field: 'position', width: 1,  },
+    { field: 'name', width: 1, },
+    { field: 'weight', width: 1, },
+    { field: 'symbol', width: 1, }
   ];
+  displayColumns: any[];
   displayedColumns: string[] = [];
-  dataSource = ELEMENT_DATA;
+  dataSource = new MatTableDataSource(ELEMENT_DATA);
 
   pressed = false;
   currentResizeIndex: number;
@@ -52,33 +55,63 @@ export class AppComponent implements OnInit, AfterViewInit {
   ) { }
 
   ngOnInit() {
+    this.displayColumns = this.availableColumns;
     this.setDisplayedColumns();
+    this.dataSource.sort = this.sort;
   }
 
   ngAfterViewInit() {
     this.setTableResize(this.matTableRef.nativeElement.clientWidth);
   }
 
+  onColumnSelect() {
+    this.setDisplayedColumns();
+    // console.info('tableWidth', this.matTableRef.nativeElement.clientWidth);
+    setTimeout( _ => {
+      const tableWidth = this.matTableRef.nativeElement.clientWidth;
+      // console.info('tableWidth', tableWidth);
+        this.setTableResize(tableWidth);
+    }, 1);
+  }
+
+  previousIndex: number;
+  dragStarted(event: CdkDragStart, index: number ) {
+    this.previousIndex = index;
+  }
+
+  dropListDropped(event: CdkDropList, index: number) {
+    if (event) {
+      const prevField = this.availableColumns[this.previousIndex];
+      const nextField = this.availableColumns[index];
+      moveItemInArray(this.availableColumns, this.previousIndex, index);
+      moveItemInArray(this.displayColumns
+        , this.displayColumns.indexOf(prevField)
+        , this.displayColumns.indexOf(nextField));
+
+      this.onColumnSelect();
+    }
+  }
+
   setTableResize(tableWidth: number) {
     let totWidth = 0;
-    this.columns.forEach(( column) => {
+    this.displayColumns.forEach(( column) => {
       totWidth += column.width;
     });
     const scale = (tableWidth - 5) / totWidth;
-    this.columns.forEach(( column) => {
+    this.displayColumns.forEach(( column) => {
       column.width *= scale;
       this.setColumnWidth(column);
     });
   }
 
   setDisplayedColumns() {
-    this.columns.forEach(( column, index) => {
-      column.index = index;
-      this.displayedColumns[index] = column.field;
-    });
+    this.displayedColumns = this.displayColumns.map( c => c.field );
   }
 
-  onResizeColumn(event: any, index: number) {
+  onResizeColumn(event: any, indexA: number) {
+    // console.info('indexA', indexA);
+    const index = this.displayColumns.indexOf(this.availableColumns[indexA]);
+    // console.info('index', index);
     this.checkResizing(event, index);
     this.currentResizeIndex = index;
     this.pressed = true;
@@ -90,7 +123,9 @@ export class AppComponent implements OnInit, AfterViewInit {
 
   private checkResizing(event, index) {
     const cellData = this.getCellData(index);
-    if ( ( index === 0 ) || ( Math.abs(event.pageX - cellData.right) < cellData.width / 2 &&  index !== this.columns.length - 1 ) ) {
+    // console.info('checkResizing:', cellData);
+    // console.info('index:', index, 'this.availableColumns.length:', this.displayColumns.length);
+    if ( ( index === 0 ) || ( Math.abs(event.pageX - cellData.right) < cellData.width / 2 &&  index !== this.displayColumns.length - 1 ) ) {
       this.isResizingRight = true;
     } else {
       this.isResizingRight = false;
@@ -99,6 +134,7 @@ export class AppComponent implements OnInit, AfterViewInit {
 
   private getCellData(index: number) {
     const headerRow = this.matTableRef.nativeElement.children[0];
+    // console.info('getCellData', headerRow);
     const cell = headerRow.children[index];
     return cell.getBoundingClientRect();
   }
@@ -119,34 +155,43 @@ export class AppComponent implements OnInit, AfterViewInit {
         this.currentResizeIndex = -1;
         this.resizableMousemove();
         this.resizableMouseup();
+        // console.info('avail:', this.availableColumns);
+        // console.info('disp:', this.displayColumns);
       }
     });
   }
 
   setColumnWidthChanges(index: number, width: number) {
-    const orgWidth = this.columns[index].width;
+    const orgWidth = this.displayColumns[index].width;
     const dx = width - orgWidth;
     if ( dx !== 0 ) {
       const j = ( this.isResizingRight ) ? index + 1 : index - 1;
-      const newWidth = this.columns[j].width - dx;
+      const newWidth = this.displayColumns[j].width - dx;
       if ( newWidth > 50 ) {
-          this.columns[index].width = width;
-          this.setColumnWidth(this.columns[index]);
-          this.columns[j].width = newWidth;
-          this.setColumnWidth(this.columns[j]);
+          this.displayColumns[index].width = width;
+          this.setColumnWidth(this.displayColumns[index]);
+          this.displayColumns[j].width = newWidth;
+          this.setColumnWidth(this.displayColumns[j]);
         }
     }
   }
 
   setColumnWidth(column: any) {
-    const columnEls = Array.from( document.getElementsByClassName('mat-column-' + column.field) );
+    const matColDef = column.field.replace(/\W/g, '-'); // allow for spaces, special chars in matColumnDef
+    // console.info('matColDef:', matColDef);
+    const columnEls = Array.from(document.getElementsByClassName(`mat-column-${column.field}`));
     columnEls.forEach(( el: HTMLDivElement ) => {
-      el.style.width = column.width + 'px';
+      // use Rederer2 object to manipulate DOM
+      this.renderer.setStyle(el, 'width', `${column.width}px`);
+      //el.style.width = column.width + 'px';
     });
   }
 
   @HostListener('window:resize', ['$event'])
   onResize(event) {
-    this.setTableResize(this.matTableRef.nativeElement.clientWidth);
+    this.onColumnSelect();
+    // setTimeout( _ => {
+    //   this.setTableResize(this.matTableRef.nativeElement.clientWidth);
+    // }, 10);
   }
 }
